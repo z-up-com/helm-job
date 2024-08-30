@@ -48,6 +48,9 @@ annotations: {}
 #    memory: 500Mi
 
 securityContext:
-  runAsUser: 
+  runAsUser:
   runAsGroup:
   fsGroup:
+
+volumes: []
+volumeMounts: []
