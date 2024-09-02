@@ -28,10 +28,9 @@ spec:
         - name: {{ template "common.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.environment }}
           env:
-          {{- range concat (.Values.global.environment) (.Values.environment | default list) }}
-            - name: {{ .name | quote }}
-              value: {{ .value | quote }}
+            {{- toYaml .Values.environment | nindent 12 }}
           {{- end }}
           {{- if .Values.command }}
           command:
