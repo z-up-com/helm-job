@@ -54,3 +54,6 @@ securityContext:
 
 volumes: []
 volumeMounts: []
+
+serviceAccount:
+  annotations: {}
