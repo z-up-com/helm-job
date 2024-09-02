@@ -1,16 +1,19 @@
----
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ template "common.fullname" . }}
 spec:
+  completions: {{ .Values.completions | default 1 }}
+  parallelism: {{ .Values.parallelism | default 1 }}
+  backoffLimit: {{ .Values.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds | default 600 }}
   template:
     spec:
-    {{- if .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-      - name: {{ .Values.imagePullSecrets }}
-    {{- end }}
-    {{- if .Values.securityContext.runAsUser }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.securityContext.runAsUser }}
       securityContext:
         runAsUser: {{ .Values.securityContext.runAsUser }}
         {{- if .Values.securityContext.runAsGroup }}
@@ -19,45 +22,47 @@ spec:
         {{- if .Values.securityContext.fsGroup }}
         fsGroup: {{ .Values.securityContext.fsGroup }}
         {{- end }}
-    {{- end }}
+      {{- end }}
+      serviceAccountName: {{ .Values.serviceAccountName | default (include "common.fullname" .) }}
       containers:
-      - image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        name: {{ template "common.fullname" . }}
-        env:
-        {{- range concat (.Values.global.environment) (.Values.environment | default list)}}
-        - name: {{ .name | quote}}
-          value: {{ .value | quote }}
-        {{- end }}
-        {{- if .Values.command }}
-        command: {{ .Values.command }}
-        {{- end }}
-        {{- if .Values.args }}
-        args: {{ .Values.args }}
-        {{- end }}
-        {{- with .Values.resources }}
-        resources:
-{{ toYaml . | indent 10 }}
-        {{- end }}
-        {{- with .Values.volumes }}
-        volumes:
-{{ toYaml . | indent 8 }}
-        {{- end }}
-        {{- with .Values.volumeMounts }}
-        volumeMounts:
-{{ toYaml . | indent 8 }}
-        {{- end }}
+        - name: {{ template "common.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          {{- range concat (.Values.global.environment) (.Values.environment | default list) }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+          {{- end }}
+          {{- if .Values.command }}
+          command:
+            {{- toYaml .Values.command | nindent 12 }}
+          {{- end }}
+          {{- if .Values.args }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml . | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.affinity }}
       affinity:
-{{ toYaml . | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
-{{ toYaml . | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: {{ .Values.restartPolicy }}
-  backoffLimit: {{ .Values.backoffLimit }}
